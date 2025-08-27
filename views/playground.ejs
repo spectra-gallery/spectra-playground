@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Spectra Playground</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.23.1/ace.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; margin:0; padding:0; }
+      .menu { padding:10px; background:#333; color:#fff; }
+      .editors { display:flex; }
+      .editor { flex:1; height:200px; }
+      iframe { width:100%; height:300px; border:none; }
+    </style>
+  </head>
+  <body>
+    <div class="menu">
+      <button id="save-btn">Save</button>
+      <button id="hash-btn">Generate Hash</button>
+    </div>
+    <input type="hidden" id="sketch-id" value="<%= sketchId %>" />
+    <input type="hidden" id="hash" value="<%= hash %>" />
+    <div class="editors">
+      <div id="html-editor" class="editor"><%= html %></div>
+      <div id="js-editor" class="editor"><%= javascript %></div>
+      <div id="css-editor" class="editor"><%= css %></div>
+    </div>
+    <iframe id="result-frame"></iframe>
+
+    <script>
+      var htmlEditor = ace.edit('html-editor');
+      htmlEditor.session.setMode('ace/mode/html');
+      var jsEditor = ace.edit('js-editor');
+      jsEditor.session.setMode('ace/mode/javascript');
+      var cssEditor = ace.edit('css-editor');
+      cssEditor.session.setMode('ace/mode/css');
+
+      function buildIframe() {
+        var tpl = `<%- iframeTemplate %>`;
+        tpl = tpl.replace('___FIDDLER__HTML___', htmlEditor.getValue());
+        tpl = tpl.replace('___FIDDLER__STYLES___', cssEditor.getValue());
+        tpl = tpl.replace('___FIDDLER__JAVASCRIPT___', jsEditor.getValue());
+        document.getElementById('result-frame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(tpl);
+      }
+      htmlEditor.session.on('change', buildIframe);
+      jsEditor.session.on('change', buildIframe);
+      cssEditor.session.on('change', buildIframe);
+      buildIframe();
+
+      document.getElementById('hash-btn').onclick = function(){
+        var chars = '0123456789abcdef';
+        var h = '0x';
+        for(var i=0;i<64;i++){ h += chars[Math.floor(Math.random()*chars.length)]; }
+        document.getElementById('hash').value = h;
+        alert('Hash generated: '+h);
+      };
+
+      document.getElementById('save-btn').onclick = async function(){
+        var data = {
+          id: document.getElementById('sketch-id').value,
+          html: htmlEditor.getValue(),
+          css: cssEditor.getValue(),
+          javascript: jsEditor.getValue(),
+          hash: document.getElementById('hash').value
+        };
+        const res = await fetch('/autosave', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        document.getElementById('sketch-id').value = result.id;
+        alert('Saved');
+      };
+    </script>
+  </body>
+</html>
