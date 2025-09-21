@@ -35,10 +35,12 @@
       cssEditor.session.setMode('ace/mode/css');
 
       function buildIframe() {
-        var tpl = `<%- iframeTemplate %>`;
-        tpl = tpl.replace('___FIDDLER__HTML___', htmlEditor.getValue());
-        tpl = tpl.replace('___FIDDLER__STYLES___', cssEditor.getValue());
-        tpl = tpl.replace('___FIDDLER__JAVASCRIPT___', jsEditor.getValue());
+        // Use JSON.stringify to safely embed the template as a JS string,
+        // then perform replacements using functions to avoid $-sequence mishaps.
+        var tpl = <%- JSON.stringify(iframeTemplate) %>;
+        tpl = tpl.replace('___FIDDLER__HTML___', () => htmlEditor.getValue());
+        tpl = tpl.replace('___FIDDLER__STYLES___', () => cssEditor.getValue());
+        tpl = tpl.replace('___FIDDLER__JAVASCRIPT___', () => jsEditor.getValue());
         document.getElementById('result-frame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(tpl);
       }
       htmlEditor.session.on('change', buildIframe);
