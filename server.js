@@ -76,10 +76,12 @@ app.get('/', async (req, res) => {
       };
     }
   }
-  const iframeTemplate = require('fs').readFileSync(
+  // Read and sanitize iframe template so </script> inside it doesn't break the outer script tag
+  const rawIframeTemplate = require('fs').readFileSync(
     path.join(__dirname, 'views', 'iframe.html'),
     'utf8'
   );
+  const iframeTemplate = rawIframeTemplate.replace(/<\/script>/g, '<\\/script>');
   res.render('playground', {
     sketchId: req.query.id || '',
     html: sketch.html || '',
