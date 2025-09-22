@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spectra Licensor • Continuity · Safety · Autonomy</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- JSZip for bundle export -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">✨ Spectra Licensor</div>
+  <div class="chips">
+    <span class="chip" id="clock">sync…</span>
+    <span class="chip" id="entropy">entropy: —</span>
+    <span class="chip" id="alerts">alerts: 0</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card">
+    <h2>Project Identity</h2>
+    <div class="grid2">
+      <div><label>Project Name</label><input id="projName" placeholder="Spectra — Kobalt / Ūmöwt"></div>
+      <div><label>Version</label><input id="projVersion" value="0.1.0"></div>
+      <div><label>Entity (legal)</label><input id="projEntity" placeholder="Uniphilabs Cooperative / Association"></div>
+      <div><label>Jurisdiction</label><input id="projJuris" placeholder="CH / EU / US / ..."></div>
+      <div class="span2"><label>Mission Statement</label><textarea id="projMission" rows="2" placeholder="Continuity, transparency, safety, collaboration, autonomy, subcultures, subversive art, goodwill…"></textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Artifact Matrix</h2>
+    <div class="grid4">
+      <div class="box">
+        <h3>Software</h3>
+        <label>License</label>
+        <select id="licSoftware">
+          <option>MIT</option><option>Apache-2.0</option><option>GPL-3.0</option>
+          <option>AGPL-3.0</option><option>LGPL-3.0</option><option>MPL-2.0</option>
+          <option>BSL-1.1</option><option>EUPL-1.2</option><option>CAL-1.0</option>
+        </select>
+        <label class="small"><input type="checkbox" id="dualEthicsSw" checked> add Ethical Charter (non‑OSI, advisory)</label>
+      </div>
+      <div class="box">
+        <h3>Hardware / Electronics</h3>
+        <label>License</label>
+        <select id="licHardware">
+          <option>CERN-OHL-P-2.0</option><option>CERN-OHL-W-2.0</option><option>CERN-OHL-S-2.0</option>
+          <option>Solderpad-2.1</option><option>TAPR-OHL-1.0</option>
+        </select>
+      </div>
+      <div class="box">
+        <h3>Data / Research</h3>
+        <label>License</label>
+        <select id="licData">
+          <option>CC-BY-4.0</option><option>CC-BY-SA-4.0</option><option>CC0-1.0</option>
+          <option>ODC-By-1.0</option><option>ODbL-1.0</option><option>Open Data Commons PDDL-1.0</option>
+        </select>
+      </div>
+      <div class="box">
+        <h3>Art / Media</h3>
+        <label>License</label>
+        <select id="licArt">
+          <option>CC-BY-4.0</option><option>CC-BY-SA-4.0</option><option>CC-BY-NC-4.0</option>
+          <option>CC-BY-NC-SA-4.0</option><option>CC0-1.0</option>
+        </select>
+      </div>
+    </div>
+    <div class="small muted">
+      Tip: pair an OSI license with an <em>Ethical Charter</em> to express safety norms without restricting core freedoms.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Domains · Property · Authority</h2>
+    <div class="grid2">
+      <div><label>Primary domains (comma‑sep)</label><input id="projDomains" placeholder="kobalt.io, umowt.io, spectra.gallery"></div>
+      <div><label>CA Strategy</label>
+        <select id="projCA">
+          <option>WebPKI + Sigstore</option>
+          <option>WebPKI + in‑house CA</option>
+          <option>Self‑signed (dev only)</option>
+        </select>
+      </div>
+      <div class="span2"><label>Authority Statement</label>
+        <textarea id="projAuthority" rows="2" placeholder="Provenance, reproducibility, rights for contributors and communities…"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Behavioral Safety & Intent</h2>
+    <div class="grid3">
+      <div class="box">
+        <h3>Analyze Text</h3>
+        <textarea id="intentText" rows="4" placeholder="Paste commit message, policy or content…"></textarea>
+        <div class="btnbar"><button id="btnAnalyze">Analyze</button></div>
+        <pre class="mono small" id="intentOut">—</pre>
+      </div>
+      <div class="box">
+        <h3>Toxicity Watch</h3>
+        <label class="small"><input type="checkbox" id="toxThreat" checked> threats</label>
+        <label class="small"><input type="checkbox" id="toxHate" checked> hateful slurs</label>
+        <label class="small"><input type="checkbox" id="toxPii" checked> PII leak</label>
+        <div class="small muted">Client‑side heuristics (no upload). Use SECURITY.md for escalation policy.</div>
+      </div>
+      <div class="box">
+        <h3>Continuity Options</h3>
+        <label class="small"><input type="checkbox" id="genGovernance" checked> add GOVERNANCE.md</label>
+        <label class="small"><input type="checkbox" id="genSecurity" checked> add SECURITY.md · THREATMODEL.md</label>
+        <label class="small"><input type="checkbox" id="genDCO" checked> add DCO.txt</label>
+        <label class="small"><input type="checkbox" id="genCode" checked> add CODE_OF_CONDUCT.md</label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Generate</h2>
+    <div class="btnbar">
+      <button id="btnPreview">Preview Manifest</button>
+      <button id="btnBundle">Build Bundle (.zip)</button>
+    </div>
+    <pre class="mono small" id="preview">—</pre>
+  </section>
+
+  <footer class="small muted center">Not legal advice. Draft with counsel for production deployments.</footer>
+</main>
+
+<script src="templates/licenses.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

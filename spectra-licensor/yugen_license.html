@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Yugen</title>
+    <script id="random" type="text/javascript">
+        /** |** Spectra Gallery **|**
+            @name Yugen
+            @file yugen.html
+            @description Spectra Diffenrential Growth Algorithm
+            @keyword Structural Colors, Spectral Structures, Generative Tones
+            @version sigma
+            @author Phil Mooney
+            @license MIT Style Guardian
+                    * @name Yugen
+                    * @version 1.0.0
+                    * @date 2023-10-01
+                    * @author Phil Mooney
+                    * @license MIT Guardian
+                    * @description A generative art piece that uses a differential growth algorithm to create complex structures.
+                    * @signature spectra.gallery
+              
+            @abstract
+                    * @author Kobalt 
+                    * @email artist[h]spectra.gallery
+                    * @description A set of nodes are attracted by their neighbors and repelled by all nodes while the different forces such as the curvature and alignement act as triggers on growth.
+                    * @link https://phil.id.art
+                    * @link artist[h]spectra.gallery
+                    * @link Instagram @spectra.gallery
+                    * @link Medium @fikuhzix
+                    * @link Twitter (X) @spectra_gallery
+                    * @link GitHub @spectra-gallery
+                    * @link BlueSky @spectra.gallery
+                    * @link Telegram @BHO4SPECTRI2BL71GLY
+                    * @link Manifesto https://fikuhzix.medium.com/spectra-a0769e3c3b94
+                    * @link Note https://x.com/i/communities/1875901249217765771
+                    * @link Channel https://discord.gg/3YNMUnBZ
+                    * @link Social https://bsky.app/profile/spectra.gallery
+                    * @link Address spectra.gallery
+                    * @link SOL ECMRTM34v8oP14yfRZppKX6UQaFFEF4GMstWR37EvZHm
+                    * @link ETH 0x4c1d7a2f3b8e5f6c9d2b5e4a2f3b8e5f6c9d2b5e4a
+            @constant
+                    * @constant {string} ORIGIN - Orgin of the canvas.
+                    * @constant {string} Df - The domain of the canvas.
+                    * @constant {string} _h - The host of the canvas.
+                    * @constant {string} ID - The ID of the canvas.
+                 
+            @class
+                    * Vector - A class representing a 2D vector.
+                    * Node - A class representing a node in the path.
+                    * Path - A class representing a path made up of nodes.
+                    * World - A class representing the world containing paths and nodes.
+                    * Polygon - A class representing a polygon gradient map.
+            
+            @argument
+                    * @argument {string} seed - The seed for the random number generator (from the URL or default).
+            @function
+                    * mathRand - PRNG function to generate a random number.
+                    * millis - Function to get the current time in milliseconds.
+            @return
+                    * @return {string} ID - The ID of the canvas.
+            
+
+            | **|** Spectra Gallery **|**
+
+        **/
+
+
+
+        var ORIGIN = "https://";
+        var Df = "yugen";
+        var _h = "yugen";
+        var EQ = "E = hv";
+        var Gf = "E = mc^2";
+        var Fg = "E = hf";
+        var _f = "F = ma";
+        var ID = "YuUh";
+
+        const sigma = "σ";
+        const _u = "μυω";
+        const _k = "αβγεθικπρ";
+
+        const _g = "ΓΔΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ";
+
+        const i0 = "ΘΙΤΣ";
+        const _0x = "ΔΚΛΡ";
+
+        var upsilon = [
+            "υ",
+            "yū",
+            "Yu",
+            "Ul",
+            "y&#363;",
+            "&#933;",
+        ];
+
+        const asif = [
+            "υ",
+            "yū",
+            "Yu",
+            "Ul"
+        ];
+
+    </script>
+
+    <script id="snippet-random-code" type="module">
+
+        export class Random {
+
+            constructor(seed) {
+                this.id = Random.getIdFromUrl(location.href);
+                this.seed = seed ?? Random.autoSeed(location.href);
+                console.info("🔑 Using seed:", this.seed);
+
+                // PRNG factory
+                this.#rand = Random.sfc32(...Random.cyrb128(this.seed));
+            }
+
+            /* ------ public API ------------------------------------------- */
+            /** Float in [0, 1) — drop-in replacement for Math.random() */
+            random() { return this.#rand(); }
+
+            /** Integer in [0, max) */
+            nextInt(max) { return Math.floor(this.random() * max); }
+
+            /** Choose one element from an array */
+            pick(arr) { return arr[this.nextInt(arr.length)]; }
+
+            /** Fisher–Yates shuffle (returns *new* array) */
+            shuffle(arr) {
+                const a = arr.slice();
+                for (let i = a.length - 1; i > 0; --i) {
+                    const j = this.nextInt(i + 1);
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            }
+
+            /* ------ factory with user prompt ----------------------------- */
+            static fromPrompt(message =
+                "Enter a seed string for deterministic output (leave empty for random):"
+            ) {
+                const input = prompt(message);
+                const seed = input && input.trim() ? input.trim() : null;
+                return new Random(seed);
+            }
+
+            /* ------ private helpers -------------------------------------- */
+            static getIdFromUrl(href) {
+                // return href.split("/").pop().split("?")[0];
+                // check if the URL contains one of the upsilon characters
+                return href.split('/').find(t =>
+                    upsilon.some(ups => t.includes(ups))
+                ) || href.split("/").pop().split("?")[0];
+
+            }
+
+            static autoSeed(href) {
+                // y + u macron in URL
+                let seed = href.split('/').find(t =>
+                    upsilon.some(ups => t.includes(ups))
+                );
+                if (seed != null) {
+                    const pattern = "seed=";
+                    for (let i = 0; i < seed.length - pattern.length; ++i) {
+                        if (seed.substring(i, i + pattern.length) === pattern) {
+                            seed = seed.substring(i + pattern.length);
+                            break;
+                        }
+                    }
+                    return seed;
+                }
+
+                // b) "?seed=foo" query parameter
+                const qp = new URLSearchParams(location.search).get("seed");
+                if (qp) return qp;
+                const alphabet = "0123456789abcdefghijklmnopqrstuvwsyz";
+
+                return "υ" + Array.from({ length: 64 },
+                    () => alphabet[(Math.random() * alphabet.length) | 0]
+                ).join("");
+            }
+
+            // --- cyrb128 (hash) & sfc32 (PRNG) -----------------------------
+            static cyrb128(str) {
+                let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+                for (let i = 0, k; i < str.length; i++) {
+                    k = str.charCodeAt(i);
+                    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+                    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+                    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+                    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+                }
+                h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+                h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+                h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+                h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+                return [(h1 ^ h2 ^ h3 ^ h4) >>> 0, (h2 ^ h1) >>> 0, (h3 ^ h1) >>> 0, (h4 ^ h1) >>> 0];
+            }
+
+            static sfc32(a, b, c, d) {
+                return function () {
+                    a >>>= 0; b >>>= 0; c >>>= 0; d >>>= 0;
+                    let t = (a + b) | 0;
+                    a = b ^ (b >>> 9);
+                    b = (c + (c << 3)) | 0;
+                    c = ((c << 21) | (c >>> 11)) + (t = (t + (d = (d + 1) | 0)) | 0) | 0;
+                    return (t >>> 0) / 4294967296;
+                };
+            }
+
+            #rand; // internal PRNG instance
+
+        }
+
+        // create a new PRNG instance
+
+        const seed = new URLSearchParams(location.search).get("seed");
+
+        // let mathRand = sfc32(...cyrb128(seed));
+        let mathRand = new Random(seed);
+
+        window.mathRand = mathRand.random.bind(mathRand);
+
+
+    </script>
+
+
+
+
+    <script id="oloblau" type="text/javascript">
+
+        Contrast = {
+
+            HUE: {
+                name: "hue",
+                description: "hue",
+            },
+            LIGHT_DARK: {
+                name: "light dark",
+                description: "light dark",
+            },
+            WARM_COOL: {
+                name: "warm cool",
+                description: "warm cool",
+            },
+            SATURATION: {
+                name: "saturation",
+                description: "saturation",
+            },
+            COMPLEMENTARY: {
+                name: "complementary",
+                description: "complementary",
+            },
+            EXTENSION: {
+                name: "extension",
+                description: "extension",
+            },
+            SIMULTANEOUS: {
+                name: "simultaneous",
+                description: "simultaneous",
+            },
+            MUNSELL_HUE: {
+                name: "munsellHue",
+                description: "munsell hue",
+            },
+
+            MUNSELL_VALUE: {
+                name: "munsell value",
+                description: "munsell value",
+            },
+            MUNSELL_CHROMA: {
+                name: "munsell chroma",
+                description: "munsell chroma",
+            },
+
+        }
+
+            /* ---------- low-level colour helpers ---------- */
+
+            class ColorPhil {
+            constructor(hex) {
+                if (!/^#?[0-9a-f]{6}$/i.test(hex))
+                    throw new Error(`Bad hex colour: ${hex}`);
+                this.hex = hex.startsWith("#") ? hex : `#${hex}`;
+                const { r, g, b } = ColorPhil.#hexToRgb(this.hex);
+                this.rgb = { r, g, b };
+                this.hsl = ColorPhil.#rgbToHsl(r, g, b);
+                this.lum = ColorPhil.#relativeLuminance(r, g, b);
+                this.warmth = ColorPhil.#warmth(this.hsl.h);
+                this.complementHue = (this.hsl.h + 180) % 360;
+            }
+
+            /* ---------- static private utils ---------- */
+            static #hexToRgb(hex) {
+                const int = parseInt(hex.slice(1), 16);
+                return {
+                    r: (int >> 16) & 255,
+                    g: (int >> 8) & 255,
+                    b: int & 255,
+                };
+            }
+
+            static #rgbToHsl(r, g, b) {
+                r /= 255; g /= 255; b /= 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+                if (max === min) { h = s = 0; }
+                else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        default: h = (r - g) / d + 4;
+                    }
+                    h *= 60;
+                }
+                return { h, s, l };
+            }
+
+            static #relativeLuminance(r, g, b) {
+                const srgb = [r, g, b].map(v => {
+                    v /= 255;
+                    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+                });
+                return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
+            }
+
+            static #warmth(h) {
+                // warm hues centred on 60° (yellow-orange); cool on 240° (blue-violet)
+                const distanceToWarmPole = Math.min(
+                    Math.abs(h - 60),
+                    360 - Math.abs(h - 60)
+                );
+                return 180 - distanceToWarmPole; // higher = warmer
+            }
+        }
+
+        /* ---------- high-level palette API ---------- */
+
+        class ColorPalette {
+            constructor(hexes) {
+                if (!Array.isArray(hexes) || hexes.length !== 6)
+                    throw new Error("Provide exactly six hex colours");
+                this.colors = hexes.map(h => new ColorPhil(h));
+            }
+
+            /** Core sorter. Returns **new** hex array. */
+            sortBy(contrast) {
+                const by = (fn) => [...this.colors].sort((a, b) => fn(a) - fn(b))
+                    .map(c => c.hex);
+
+                switch (contrast) {
+                    /* -------------------- Itten -------------------- */
+                    case Contrast.HUE.name: return by(c => c.hsl.h);
+                    case Contrast.LIGHT_DARK.name: return by(c => c.lum);
+                    case Contrast.WARM_COOL.name: return by(c => -c.warmth); // warm → cool
+                    case Contrast.SATURATION.name: return by(c => -c.hsl.s);  // high-sat → low
+                    case Contrast.COMPLEMENTARY.name: return this.#sortComplementary();
+                    case Contrast.EXTENSION.name: return by(c => c.hsl.l);   // ⬆ lightness
+                    case Contrast.SIMULTANEOUS.name: return this.#sortSimultaneous();
+
+                    /* -------------------- Munsell ------------------ */
+                    case Contrast.MUNSELL_HUE.name: return by(c => c.hsl.h);
+                    case Contrast.MUNSELL_VALUE.name: return by(c => c.hsl.l);
+                    case Contrast.MUNSELL_CHROMA.name: return by(c => -c.hsl.s);
+
+                    default:
+                        throw new Error(`Unknown contrast: ${contrast}`);
+                }
+            }
+
+            /* ----- helpers for the two trickier Itten contrasts ----- */
+
+            #sortComplementary() {
+                // place each colour next to the palette hue that is *closest* to its complement
+                const remaining = [...this.colors];
+                const result = [];
+                let current = remaining.shift();
+                result.push(current);
+                while (remaining.length) {
+                    const nextIdx = remaining
+                        .map((c, i) => [i, Math.abs(c.hsl.h - current.complementHue)])
+                        .sort(([, d1], [, d2]) => d1 - d2)[0][0];
+                    current = remaining.splice(nextIdx, 1)[0];
+                    result.push(current);
+                }
+                return result.map(c => c.hex);
+            }
+
+            #sortSimultaneous() {
+                // very loose proxy: alternate lightness around mid-grey (.5)
+                const light = this.colors.filter(c => c.hsl.l >= 0.5)
+                    .sort((a, b) => a.hsl.l - b.hsl.l);
+                const dark = this.colors.filter(c => c.hsl.l < 0.5)
+                    .sort((a, b) => b.hsl.l - a.hsl.l);
+                const out = [];
+                while (light.length || dark.length) {
+                    if (light.length) out.push(light.shift());
+                    if (dark.length) out.push(dark.shift());
+                }
+                return out.map(c => c.hex);
+            }
+            getDominantContrasts = function (max = 3) {
+                const clamp01 = v => Math.max(0, Math.min(1, v));
+
+                /* --- helper: circular hue range (0–360 → 0–360) ---------- */
+                const hueRange = (() => {
+                    const hs = this.colors.map(c => c.hsl.h).sort((a, b) => a - b);
+                    const gaps = hs.map((h, i) => (i === 0 ? h + 360 - hs.at(-1) : h - hs[i - 1]));
+                    return 360 - Math.max(...gaps);   // “span” covered by hues
+                })();
+
+                /* --- helper: warmth spread (0–180 → 0–180) ---------------- */
+                const warmthSpread = (() => {
+                    const w = this.colors.map(c => c.warmth);
+                    return Math.max(...w) - Math.min(...w);
+                })();
+
+                /* --- helper: complementary proximity (0–1) ---------------- */
+                const complementaryScore = (() => {
+                    let best = 0;
+                    // examine every pair only once
+                    for (let i = 0; i < this.colors.length - 1; i++) {
+                        for (let j = i + 1; j < this.colors.length; j++) {
+                            const d = Math.abs(this.colors[i].hsl.h - this.colors[j].hsl.h);
+                            const diff = Math.min(d, 360 - d);
+                            const closeness = 1 - Math.abs(diff - 180) / 180; // 1 when diff = 180°
+                            best = Math.max(best, closeness);
+                        }
+                    }
+                    return best;
+                })();
+
+                /* --- helper: simultaneous light–dark presence (0–1) -------- */
+                const simultaneousScore = (() => {
+                    const lights = this.colors.filter(c => c.hsl.l >= 0.6).length;
+                    const darks = this.colors.filter(c => c.hsl.l <= 0.4).length;
+                    const mixed = Math.min(lights, darks);
+                    return clamp01(mixed / 3); // 3 is “half the palette” → high score
+                })();
+
+                /* --- gather raw metrics ----------------------------------- */
+                const metrics = {
+                    hue: clamp01(hueRange / 360),
+                    [Contrast.LIGHT_DARK.name]: clamp01(Math.max(...this.colors.map(c => c.lum))
+                        - Math.min(...this.colors.map(c => c.lum))),
+                    [Contrast.WARM_COOL.name]: clamp01(warmthSpread / 180),
+                    [Contrast.SATURATION.name]: clamp01(Math.max(...this.colors.map(c => c.hsl.s))
+                        - Math.min(...this.colors.map(c => c.hsl.s))),
+                    [Contrast.COMPLEMENTARY.name]: complementaryScore,
+                    [Contrast.EXTENSION.name]: clamp01(Math.max(...this.colors.map(c => c.hsl.l))
+                        - Math.min(...this.colors.map(c => c.hsl.l))), // rough proxy
+                    [Contrast.SIMULTANEOUS.name]: simultaneousScore,
+                };
+
+                /* --- rank and return -------------------------------------- */
+                return Object.entries(metrics)
+                    .sort(([, a], [, b]) => b - a)          // strongest → weakest
+                    .slice(0, clamp01(max) * 3 || 3)        // between 1–3
+                    .map(([contrast, score]) => ({ contrast: contrast, score: +score.toFixed(3) }));
+            };
+        }
+
+    </script>
+
+    <style>
+        body {
+            background-color: transparent;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            /*Can also be `fixed`*/
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto;
+
+        }
+
+        .text {
+            position: absolute;
+            color: #000;
+            font-size: 1em;
+            pointer-events: none;
+            padding: 0.5em;
+            font-family: Helvetica Neue, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="text/javascript">
+
+
+        var canvas;
+        var ctx;
+
+
+
+        let world;
+        let nodes = [];
+        let paths = [];
+
+        let start = 0;
+        let dt = 0;
+        let state = 0;
+        let speed = 5;
+
+
+        var width;
+        var height;
+        let w, h;
+        let wdt;
+
+        var scl = 10;
+        var cols, rows;
+
+        var mouseX = 0;
+        var mouseY = 0;
+
+
+        let color_palette;
+        let backg_index;
+
+        let contrasts = [];
+
+        var palette = [
+            ["#40f2d0", "#999DFF", "#FF9751", "#545479", "#8EB49B", "#2F4858"],
+            ["#082880", "#FD765D", "#FFB753", "#00BABB", "#5E5A8B", "#B02F37"],
+            ["#7462f9", "#B5A6DC", "#68BAA6", "#EE1E2F", "#00098D", "#E0EEF0"],
+            ["#f4b53f", "#2F4858", "#FFEDCB", "#4B8178", "#4E2D21", "#C1554E"],
+            ["#1D1B33", "#2F4858", "#FFEDCB", "#4B8178", "#7197A8", "#362E37"],
+            ["#F4B53F", "#2F4858", "#FFEDCB", "#4B8178", "#C1554E", "#6A4C57"],
+            ["#453C4C", "#B3AA74", "#FFEDCB", "#9F9D8A", "#7A6154", "#204E5E"],
+            ["#4C4459", "#82B59D", "#FFEDCB", "#F3AB4E", "#A44440", "#204E5E"],
+            ["#203239", "#96977B", "#FFEDCB", "#DB986F", "#964744", "#2C3637"],
+            ["#344C5C", "#698DA0", "#BFB8A6", "#E8CFC1", "#D96D59", "#2B3967"],
+            ["#263A5B", "#61898D", "#B4C4C5", "#FAE3C0", "#7B4B5A", "#B3BC99"],
+            ["#7A8671", "#D2B27C", "#E4CC91", "#BB605A", "#7B4B5A", "#F0E9A9"],
+            ["#ffa943", "#2177f4", "#35fc93", "#f9cfd2", "#6eabf4", "#3714a1"],
+            ["#ce2d42", "#7462f9", "#f4b53f", "#123676", "#9c223d", "#e6c7b4"],
+            ["#06a0ba", "#6f3bff", "#f20a41", "#8777f7", "#4848c1", "#e6c7b4"],
+            ["#71f2ff", "#81fcca", "#f91cb0", "#0239c1", "#05bdc6", "#f7f1b4"],
+            ["#302D3B", "#DBF7BD", "#879369", "#9A5154", "#C3C590", "#CAA174"],
+            ["#25164D", "#BFD4BF", "#316C6F", "#494190", "#D3B74F", "#ECE5DE"],
+            ["#624565", "#9B9589", "#E49E81", "#DB6A60", "#FAB582", "#E3B69A"],
+            ["#594C98", "#372B33", "#FE0878", "#82D6DB", "#92D0AF", "#721F4C"],
+            ["#F0DEB4", "#A1A17A", "#5A8170", "#F4F3CC", "#4B8178", "#FFC7A1"],
+            ["#A42534", "#3F352F", "#B74C3B", "#D4AA71", "#DCCFB2", "#693239"],
+            ["#665B55", "#F5B488", "#B55053", "#8B2335", "#69837B", "#F0D2B1"],
+            ["#313D51", "#FBE8AA", "#EB917B", "#B15552", "#809488", "#337F83"],
+            ["#042882", "#81fcca", "#f91cb0", "#0239c1", "#8450d6", "#05bdc6"],
+            ["#304B61", "#281733", "#377F86", "#D1D1AE", "#DB6D6A", "#9AC7C3"],
+            ["#2F677E", "#B5B383", "#C35F4F", "#D2E1D9", "#7FD1AE", "#FAE7BF"],
+            ["#2A2B41", "#673939", "#377F86", "#E3D5AE", "#EFC375", "#281733"],
+            ["#FF7E42", "#2D2E3C", "#FFE1C8", "#4F9472", "#D1594D", "#384C7D"],
+            ["#FF7306", "#C7B18E", "#FFE3A4", "#7F4E4D", "#233072", "#6B97A8"],
+            ["#FF6705", "#ED9C7B", "#FFE1A2", "#7F4E4D", "#154150", "#BAC292"],
+            ["#f2c079", "#3c3c67", "#f7edcf", "#84a0a4", "#d22f2f", "#cfd5ed"],
+            ["#505978", "#8ab984", "#f7d8c6", "#7f655d", "#c6d8f7", "#78A39B"],
+            ["#2F3C3E", "#7CAB93", "#B6CDA9", "#F4F3CF", "#666460", "#C9A889"],
+            ["#C1554E", "#0C3E4D", "#076269", "#C5B65B", "#F7C862", "#22BB9B"],
+            ["#C1554E", "#477F82", "#22BB9B", "#DFD2A8", "#F7C862", "#63AC9C"],
+            ["#3E3649", "#6D7180", "#B0ACAD", "#DFD2A8", "#F7C862", "#A6BC99"],
+            ["#44E2D2", "#2365B8", "#645EBA", "#664785", "#F38073", "#2E93B7"],
+            ["#E7A564", "#AC966F", "#596358", "#234564", "#EB7952", "#F0BA81"],
+            ["#131C3B", "#2B3C61", "#4F77C9", "#8FC2DE", "#D2DCC0", "#265670"],
+            ["#D62A58", "#122959", "#4F77C9", "#8FC2DE", "#D2DCC0", "#466C88"],
+            ["#DFE3DB", "#99BEA5", "#51525F", "#6C6A36", "#3F4159", "#572D54"],
+            ["#066A74", "#352F51", "#601449", "#EC4E25", "#F7954A", "#792023"],
+            ["#131133", "#0A405E", "#EF4F56", "#68C3A0", "#F3EFCA", "#A5282F"],
+            ["#234357", "#33AFA6", "#8FE2AD", "#DBEFA9", "#EACF7B", "#408AA8"],
+            ["#FDFCF8", "#A2A295", "#5A5F5F", "#2C3D3C", "#252929", "#31576E"],
+            ["#2F2930", "#707485", "#99AABE", "#B6E6E8", "#FBF8F2", "#C4BEBE"],
+            ["#F4B53F", "#6A4C57", "#DBE3AA", "#6EC699", "#3C4549", "#A66648"],
+            ["#F4B53F", "#6A4C57", "#212D4E", "#274B64", "#628367", "#6B293C"],
+            ["#F4B53F", "#6A4C57", "#21B29F", "#406B77", "#333F5B", "#3A8EA2"],
+            ["#432D3A", "#42495F", "#6F7E67", "#C0B37A", "#E9C268", "#E0DEAB"],
+            ["#432D3A", "#42495F", "#368991", "#E5DAB6", "#EDAB58", "#ED7B4A"],
+            ["#F3E6CA", "#DCAF8A", "#A8AD75", "#40818B", "#32374A", "#96B7B7"],
+            ["#492E1B", "#732737", "#5D5969", "#8F8E71", "#E8D993", "#B25963"],
+            ["#25272C", "#FBEFBD", "#DCB26C", "#386B67", "#0D3844", "#497084"],
+            ["#25272C", "#FBEFBD", "#AEAA9D", "#497084", "#303E61", "#3770A2"],
+            ["#292127", "#9B464A", "#E0C985", "#2A979A", "#0D2F3C", "#ECEFDB"],
+            ["#F4B53F", "#2F4858", "#0FB3BC", "#D6E3BD", "#C1554E", "#6A4C57"],
+            ["#D4BE5B", "#A1D1B5", "#48ADB6", "#516C57", "#401D35", "#39447D"],
+            ["#401D35", "#9E4557", "#F16E54", "#F2D89D", "#C4BB86", "#F9AD69"],
+            ["#FEB613", "#DEE4D7", "#3EC2B2", "#356F8D", "#2E2A32", "#A5E1AC"],
+            ["#8F4756", "#E7D7C4", "#A9A1A5", "#7A909D", "#352E3F", "#BA8B80"],
+            ["#1A2739", "#223653", "#5C223D", "#CD253A", "#EA8353", "#15486B"],
+            ["#385F8D", "#223653", "#E3564C", "#CD253A", "#764468", "#E1BAA9"],
+            ["#BFE3D4", "#F1D499", "#6787A0", "#3E5277", "#341C33", "#9E667B"],
+            ["#495069", "#87AD9F", "#D4C8AC", "#B67465", "#4B1F33", "#F28443"],
+            ["#495069", "#528B8C", "#EBDCBE", "#F0B07D", "#BD5D60", "#82A2B9"],
+            ["#507386", "#78B4AE", "#F2E1B9", "#C78379", "#8A6946", "#2D2543"],
+        ];
+
+
+        function init() {
+
+            var body = document.querySelector('body');
+
+            canvas = document.createElement('canvas');
+            body.appendChild(canvas);
+
+
+            ctx = canvas.getContext('2d');
+
+
+            w = window.innerWidth;
+
+            h = window.innerHeight;
+
+            const pixelRatio = window.devicePixelRatio;
+
+
+            canvas.width = (w * pixelRatio) | 0;
+            canvas.height = (h * pixelRatio) | 0;
+
+
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${h}px`;
+
+
+            width = w;
+            height = h;
+
+
+            ctx.scale(pixelRatio, pixelRatio);
+
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.lineWidth = 1;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            cols = (width / scl + 1) | 0;
+            rows = (height / scl + 1) | 0;
+
+            start = Date.now();
+
+
+            const palette_index = randomRange(0, palette.length) | 0;
+            color_palette = palette[palette_index];// palette[palette_index];
+            console.log(palette_index)
+            backg_index = randomRange(0, color_palette.length) | 0;
+
+            const palettes = new ColorPalette(color_palette);
+            contrasts = palettes.getDominantContrasts();
+            console.table(contrasts);
+
+            world = new World();
+
+
+            for (let j = 0; j < 1; j++) {
+                let path = new Path();
+                // let x = randomRange(-width / 2 + 40, width / 2 - 40);
+                //let y = randomRange(-height / 2 + 40, height / 2 - 40);
+                let x = randomRange(-width / 2 + 40, width / 2 - 40);
+                let y = randomRange(-height / 2 + 40, height / 2 - 40);
+                let nodeN = randomRange(7, 19) | 0;
+                for (let i = 0; i < 60; i++) {
+
+                    let theta = mapRange(i, 0, 60, 0, Math.PI * 2);
+                    let amp = randomRange(85, 90);
+                    // let node = new Node(Math.cos(theta) * 90, Math.sin(theta) * 90);
+                    let node = new Node(Math.cos(theta) * amp, Math.sin(theta) * amp);
+                    path.nodes.push(node);
+
+                    nodes.push(node);
+                }
+
+                paths.push(path);
+
+
+            }
+
+            world.paths.push(...paths);
+
+
+            for (let i = 0; i < paths.length; i++) {
+                let path = paths[i];
+                for (let j = 0; j < path.nodes.length; j++) {
+                    let node = path.nodes[j];
+                    // in node.neighbors add the node i-1 and i+1
+                    if (j === 0) {
+                        node.neighbors.push(path.nodes[path.nodes.length - 1]);
+                        path.nodes[path.nodes.length - 1].neighbors.push(node);
+                    } else if (j === path.nodes.length - 1) {
+                        node.neighbors.push(path.nodes[0]);
+                        path.nodes[0].neighbors.push(node);
+                    } else {
+                        node.neighbors.push(path.nodes[j - 1]);
+                        path.nodes[j - 1].neighbors.push(node);
+                        node.neighbors.push(path.nodes[j + 1]);
+                        path.nodes[j + 1].neighbors.push(node);
+                    }
+                }
+            }
+
+            spawnUIText();
+
+
+            window.$generativeTraits = {
+                "Type": "Audio",
+                "BPM": "60",
+
+            };
+
+            canvas.addEventListener("keypress", capture, false);
+            // canvas.addEventListener('click', audioPlay);
+            // canvas.addEventListener('touchstart', audioPlay);
+
+            canvas.addEventListener('mousemove', mouseMove, false);
+            canvas.addEventListener('touchmove', touchMove), false;
+
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = "rgba(0,0,0,0)";
+            // ctx.fillStyle = "#E3D5AE";
+            ctx.fillRect(0, 0, width, height);
+
+            window.requestAnimationFrame(anim);
+        }
+
+
+        function anim() {
+
+            if (nodes.length < 79) {
+                window.requestAnimationFrame(anim);
+
+            } else {
+                updateText();
+            }
+
+
+            ctx.save();
+
+            /*
+            world.polygons.forEach(polygon => {
+                polygon.draw();
+            });
+            */
+
+            ctx.translate(width / 2, height / 2);
+
+
+
+            for (let i = 0; i < paths.length; i++) {
+                paths[i].update();
+                paths[i].draw();
+
+                for (let j = 0; j < paths.length; j++) {
+                    if (i !== j) {
+                        // paths[i].repelPaths(paths[j]);
+                    }
+                }
+                // paths[i].clusterPaths();
+                // if (paths[i].nodes.length < 100) {
+
+                if (mathRand() < 0.01) {
+                    paths[i].randomGrowth();
+                }
+
+                // Increase frequency of diffGrowth to expand the circle
+                paths[i].diffGrowth();
+
+                // Call diffShrink occasionally to maintain spacing
+                if (mathRand() < 0.005) {
+                    paths[i].diffShrink();
+                }
+
+                // }
+
+            }
+
+            ctx.restore();
+
+        }
+
+
+        class Vector {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+            add(v) {
+                return new Vector(this.x + v.x, this.y + v.y);
+            }
+            sub(v) {
+                return new Vector(this.x - v.x, this.y - v.y);
+            }
+            mult(s) {
+                return new Vector(this.x * s, this.y * s);
+            }
+            div(s) {
+                return new Vector(this.x / s, this.y / s);
+            }
+            mag() {
+                return Math.sqrt(this.x * this.x + this.y * this.y);
+            }
+            normalize() {
+                return this.div(this.mag());
+            }
+            limit(max) {
+                if (this.mag() > max) {
+                    return this.normalize().mult(max);
+                } else {
+                    return this;
+                }
+            }
+            dist(v) {
+                return this.sub(v).mag();
+            }
+            setMag(mag) {
+                return this.normalize().mult(mag);
+            }
+            heading() {
+                return Math.atan2(this.y, this.x);
+            }
+            rotate(angle) {
+                let newHeading = this.heading() + angle;
+                let mag = this.mag();
+                this.x = Math.cos(newHeading) * mag;
+                this.y = Math.sin(newHeading) * mag;
+                return this;
+            }
+            lerp(v, t) {
+                return this.add(v.sub(this).mult(t));
+            }
+            lerp2(v, t) {
+                return this.sub(v.sub(this).mult(t));
+            }
+            copy() {
+                return new Vector(this.x, this.y);
+            }
+            dot(v) {
+                return this.x * v.x + this.y * v.y;
+            }
+            static lerp(v0, v1, t) {
+                return v0.mult(1 - t).add(v1.mult(t));
+            }
+            static dot(v1, v2) {
+                return v1.x * v2.x + v1.y * v2.y;
+            }
+        }
+
+        class Node {
+            constructor(x, y) {
+                this.pos = new Vector(x, y);
+                this.iniPos = new Vector(x, y);
+                this.vel = new Vector(0, 0);
+                this.acc = new Vector(0, 0);
+                this.neighbors = [];
+                /*
+                this.minDistance = 10;
+                this.attractionForce = 1.9;
+                this.repulsionForce = 0.11; // 0.01
+                this.attractionForce2 = 0.6;
+                this.repulsionForce2 = 0.9;
+                this.repulsionForce3 = 2.2;
+                this.attractionForce3 = 0.0001; // iniPos force 0.01
+                this.attractionForce4 = 3.3;
+                this.repulsionForce4 = 0.9; // 10.9
+                this.attractionForce5 = 0.001; // 0.001
+                */
+                this.attractionForce = 0.3;
+                this.repulsionForce = 1.0;
+                this.minDistance = 10;// Increased to strengthen repulsion between nodes
+                this.attractionForce2 = 0.8; // Adjusted for additional attraction
+                this.repulsionForce2 = 1.0; // Increased for additional repulsion
+                this.repulsionForce3 = 2.5; // Slightly increased for curvature-related repulsion
+                this.attractionForce3 = 0.0001; // Keeping the same for initial position force
+                this.attractionForce4 = 3.5; // Increased for alignment force
+                this.repulsionForce4 = 1.0; // Increased for mouse repulsion force
+                this.attractionForce5 = 0.005;
+                this.p = false;
+
+                this.amplitude = 0;
+
+                this.r = randomRange(1, 4) | 0;
+                this.radius = this.r * 12;
+
+                this.init();
+            }
+            update() {
+                // Calculate the total force acting on the node
+                let totalForce = new Vector(0, 0);
+
+                // Calculate the attraction force from each neighbor
+                for (const neighbor of this.neighbors) {
+                    const distance = neighbor.pos.sub(this.pos).mag();
+                    const direction = neighbor.pos.sub(this.pos).normalize();
+                    const attraction = direction.mult(this.attractionForce * (distance - this.minDistance));
+                    totalForce = totalForce.add(attraction);
+                }
+
+                // Calculate the repulsion force from each neighbor
+                for (const neighbor of this.neighbors) {
+                    const distance = neighbor.pos.sub(this.pos).mag();
+                    const direction = neighbor.pos.sub(this.pos).normalize();
+                    const repulsion = direction.mult(-this.repulsionForce * 1 / (distance * distance));
+                    totalForce = totalForce.add(repulsion);
+                }
+
+                // Force to maintain initial position
+                const distance4 = this.iniPos.sub(this.pos).mag();
+                if (distance4 > 0.1) {
+                    const direction4 = this.iniPos.sub(this.pos).normalize();
+                    let attraction4 = direction4.mult(this.attractionForce3 * distance4);
+                    totalForce = totalForce.add(attraction4);
+                }
+
+                // Sinusoidal force
+                const frequency = 10;
+                const time = millis() * 0.001;
+                this.applyAudioWaveForce();
+                this.applySinusoidalForce(new Vector(0, 0), this.amplitude, frequency, time);
+
+                // Additional repulsion force based on k-NN search
+                for (const neighbor of this.knnSearch(this.radius)) {
+                    const distance3 = neighbor.pos.sub(this.pos).mag();
+                    const direction3 = neighbor.pos.sub(this.pos).normalize();
+                    const repulsion3 = direction3.mult(-this.repulsionForce2 * 1 / (distance3 * distance3));
+                    totalForce = totalForce.add(repulsion3);
+                }
+
+                // Global repulsion force from all nodes
+                for (const other of nodes) {
+                    if (other === this) continue;
+                    const distance = other.pos.sub(this.pos).mag();
+                    const direction = other.pos.sub(this.pos).normalize();
+                    const repulsion = direction.mult(-this.repulsionForce * 1 / (distance * distance));
+                    totalForce = totalForce.add(repulsion);
+                }
+
+                // Alignment force
+                const midPoint = new Vector(0, 0);
+                for (const neighbor of this.neighbors) {
+                    midPoint.x += neighbor.pos.x;
+                    midPoint.y += neighbor.pos.y;
+                }
+                midPoint.x /= this.neighbors.length;
+                midPoint.y /= this.neighbors.length;
+                const direction = midPoint.sub(this.pos).normalize();
+                const alignment = direction.mult(this.attractionForce4 * (midPoint.sub(this.pos).mag() - this.minDistance));
+                totalForce = totalForce.add(alignment);
+
+                // Curvature force
+                const curvatureForce = new Vector(0, 0);
+                for (let i = 0; i < this.neighbors.length; i++) {
+                    const neighbor = this.neighbors[i];
+                    const nextNeighbor = this.neighbors[(i + 1) % this.neighbors.length];
+                    const tangent = neighbor.pos.sub(this.pos).normalize();
+                    const nextTangent = nextNeighbor.pos.sub(this.pos).normalize();
+                    const curvature = tangent.add(nextTangent).normalize();
+                    curvatureForce.x += curvature.x;
+                    curvatureForce.y += curvature.y;
+                }
+                curvatureForce.x /= this.neighbors.length;
+                curvatureForce.y /= this.neighbors.length;
+                const curvatureCenter = this.pos.add(curvatureForce.mult(0.5));
+                const distance2 = curvatureCenter.sub(this.pos).mag();
+                const direction2 = curvatureCenter.sub(this.pos).normalize();
+                const attraction2 = direction2.mult(-this.repulsionForce3 * 1 / (distance2 * distance2));
+                totalForce = totalForce.add(attraction2);
+
+                // Repel nodes from the mouse
+                const mouse = new Vector(mouseX, mouseY);
+                const distance = mouse.sub(this.pos).mag();
+                if (distance < 100) {
+                    const direction = mouse.sub(this.pos).normalize();
+                    const repulsion = direction.mult(-this.repulsionForce4 * 1 / (distance * distance));
+                    totalForce = totalForce.add(repulsion);
+                }
+
+                // Attraction force to keep node within polygon
+                let posOffset = new Vector(this.pos.x + width / 2, this.pos.y + height / 2);
+                let i = posOffset.x / scl | 0;
+                let j = posOffset.y / scl | 0;
+                let index = i + j * cols;
+                let polygon = world.polygons[index];
+                if (polygon) {
+                    const direction = polygon.center.sub(posOffset).normalize();
+                    const distance = polygon.center.sub(posOffset).mag();
+                    const attraction = direction.mult(this.attractionForce5 * distance);
+                    totalForce = totalForce.add(attraction);
+                    polygon.spot = true;
+                }
+
+                this.acc = totalForce.div(1);
+
+                // Update the pos and velocity of the node using the motion equations and integration
+                const dt = 0.01; // Time step
+                const damping = 0.5; // Damping factor
+                const velocity = this.vel.add(this.acc.mult(dt)).mult(1 - damping * dt);
+                this.pos = this.pos.add(velocity.mult(dt));
+                this.vel = velocity;
+                this.acc = new Vector(0, 0);
+            }
+
+
+            applySinusoidalForce(origin, amplitude, frequency, time) {
+                let force = new Vector(0, 0);
+                const direction = this.pos.sub(origin).normalize();
+                const distance = this.pos.sub(origin).mag();
+                const phase = frequency * time + distance * 0.05; // 0.05 is the phase shift
+                const sinusoidal = Math.sin(phase) * this.amplitude;
+
+
+                force.x = direction.x * sinusoidal;
+                force.y = direction.y * sinusoidal;
+
+
+
+                const perpendicular = new Vector(direction.y, -direction.x);
+                force.x += perpendicular.x;
+                force.y += perpendicular.y;
+
+
+                this.acc = this.acc.add(force);
+
+                /*
+                        if (this.amplitude < 10 && !this.p) {
+                            this.amplitude += 0.15;
+                        }
+                        if (this.amplitude > 0 && this.p) {
+                            this.amplitude -= 0.05;
+                        }
+                        if (this.amplitude >= 10) {
+                            this.p = true;
+                        }
+                        if (this.amplitude <= 0) {
+                            this.p = false;
+                        }
+                */
+            }
+
+            applyAudioWaveForce() {
+
+
+
+
+                if (this.amplitude < 10 && !this.p) {
+                    this.amplitude += 0.15;
+                }
+                if (this.amplitude > 0 && this.p) {
+                    this.amplitude -= 0.05;
+                }
+                if (this.amplitude >= 10) {
+                    this.p = true;
+                }
+                if (this.amplitude <= 0) {
+                    this.p = false;
+                }
+
+            }
+
+
+
+            knnSearch(radius) {
+                let neighbors = [];
+                for (const node of nodes) {
+                    const distance = node.pos.sub(this.pos).mag();
+                    if (distance <= radius && node !== this) {
+                        neighbors.push(node);
+                    }
+                }
+                return neighbors;
+            }
+
+
+            move() {
+                if (0 <= this.t && this.t < this.t1) {
+                    let nrm = norm(this.t, 0, this.t1 - 1);
+                    // this.attractionForce2 = lerp(0, 0.8, easeOutQuint(nrm));
+                    // this.repulsionForce2 = lerp(0.1, 0.9, easeOutQuint(nrm));
+                    // this.amplitude = lerp(0, 0.1, easeOutQuint(nrm));
+
+                }
+                if (this.t1 < this.t) {
+                    this.init();
+                }
+                this.t++;
+            }
+
+            init() {
+                this.t = (-mathRand() * mapRange(speed, 1, 5, 5000, 1000)) | 0;
+                this.t1 = mapRange(speed, 1, 5, 2200, 600);
+            }
+
+            display() {
+                ctx.fillStyle =
+                    ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.r * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+        }
+
+        class Path {
+            constructor() {
+                this.nodes = [];
+                this.maxEdgeLength = 40; // Decreased for a more refined path
+                this.minEdgeLength = 20;
+                this.attractionForce = 0.3;
+                this.repulsionForce = 10.6;
+                this.influenceRadius = 20;
+                this.maxForce = 6;
+                this.index = randomRange(0, color_palette.length) | 0;
+                this.color = color_palette[this.index];
+            }
+            draw() {
+                // this.color hex + alpha
+                ctx.strokeStyle = this.color + "05";
+                ctx.beginPath();
+                ctx.moveTo(this.nodes[0].pos.x, this.nodes[0].pos.y);
+                for (let i = 0; i < this.nodes.length - 1; i++) {
+                    const xc = (this.nodes[i].pos.x + this.nodes[i + 1].pos.x) / 2;
+                    const yc = (this.nodes[i].pos.y + this.nodes[i + 1].pos.y) / 2;
+                    ctx.quadraticCurveTo(this.nodes[i].pos.x, this.nodes[i].pos.y, xc, yc);
+                }
+                // ctx.quadraticCurveTo(this.nodes[this.nodes.length - 2].pos.x, this.nodes[this.nodes.length - 2].pos.y, this.nodes[this.nodes.length - 1].pos.x, this.nodes[this.nodes.length - 1].pos.y);
+                ctx.quadraticCurveTo(this.nodes[this.nodes.length - 1].pos.x, this.nodes[this.nodes.length - 1].pos.y, this.nodes[0].pos.x, this.nodes[0].pos.y);
+
+                ctx.stroke();
+
+
+
+                /*^
+ 
+                 for (let i = 0; i < this.nodes.length; i++) {
+                     this.nodes[i].display();
+                 }
+                 */
+
+            }
+            update() {
+                for (let i = 0; i < this.nodes.length; i++) {
+                    this.nodes[i].update();
+                    this.nodes[i].move();
+                }
+
+            }
+
+            repelPaths(otherPath) {
+                let delta = otherPath.computeCenterOfMass().sub(this.computeCenterOfMass())
+                const d = delta.mag();
+                delta = delta.normalize();
+                if (d < this.diameter() / 2 + otherPath.diameter() / 2 + this.influenceRadius) {
+                    const force = delta.mult(-this.repulsionForce / d * d);
+                    for (const node of this.nodes) {
+                        // let steer = force.sub(node.vel);
+                        //  node.acc = node.acc.add(steer);
+                        for (const otherNodes of otherPath.nodes) {
+                            let delta2 = otherNodes.pos.sub(node.pos);
+                            const d2 = delta2.mag();
+                            delta2 = delta2.normalize();
+                            if (d2 < this.influenceRadius) {
+                                const force2 = delta2.mult(-this.repulsionForce / d2 * d2);
+                                let steer2 = force2.sub(node.vel);
+                                node.acc = node.acc.add(steer2);
+                            }
+                        }
+                    }
+                }
+
+
+            }
+            // cluster paths to the center of the canvas
+            clusterPaths() {
+                let center = new Vector(0, 0);
+                let delta = center.sub(this.computeCenterOfMass());
+                const d = delta.mag();
+                delta = delta.normalize();
+
+                for (const node of this.nodes) {
+                    let force = delta.mult(this.attractionForce * d);
+                    force = force.sub(node.vel);
+                    node.acc = node.acc.lerp(force, 0.5);
+                }
+
+
+            }
+
+
+
+            diffGrowth() {
+                // add a node on the path between 2 existing nodes if their distance is longer than maxedgelength, disconnect old neighbors and connect the new node to the neighbors
+                for (let i = 0; i < this.nodes.length; i++) {
+                    let node = this.nodes[i];
+                    let j = (i + 1) % this.nodes.length;
+                    let nextNode = this.nodes[j];
+                    let distance = node.pos.dist(nextNode.pos);
+
+                    if (distance > this.maxEdgeLength) {
+                        let newNode = new Node((node.pos.x + nextNode.pos.x) / 2, (node.pos.y + nextNode.pos.y) / 2);
+                        this.nodes.splice(j, 0, newNode);
+                        nodes.push(newNode);
+                        // remove neighbor j from node i and add the new node
+                        node.neighbors.splice(node.neighbors.indexOf(nextNode), 1, newNode);
+                        // node.neighbors.push(newNode);
+                        newNode.neighbors.push(node);
+                        // remove neighbor i from node j and add the new node
+                        nextNode.neighbors.splice(nextNode.neighbors.indexOf(node), 1, newNode);
+                        // nextNode.neighbors.push(newNode);
+                        newNode.neighbors.push(nextNode);
+
+
+
+                        break;
+                    }
+
+
+                }
+            }
+
+            // differntial shrink, remove a node on the path between 2 existing nodes if their distance is shorter than minEdgeLength, disconnect old neighbors and connect the new node to the neighbors
+            diffShrink() {
+                for (let i = 0; i < this.nodes.length; i++) {
+                    let node = this.nodes[i];
+                    let j = (i + 1) % this.nodes.length;
+                    let nextNode = this.nodes[j];
+
+                    // Check if the distance between node and nextNode is less than half of maxEdgeLength
+                    let distance = node.pos.dist(nextNode.pos);
+                    if (distance < this.minEdgeLength / 2) {
+                        // Remove the node in between (j)
+                        let removedNode = this.nodes.splice(j, 1)[0];
+
+                        // Reconnect neighbors of node and nextNode
+                        let indexInNodeNeighbors = node.neighbors.indexOf(removedNode);
+                        if (indexInNodeNeighbors !== -1) {
+                            node.neighbors.splice(indexInNodeNeighbors, 1);
+                            if (indexInNodeNeighbors < node.neighbors.length) {
+                                node.neighbors[indexInNodeNeighbors].neighbors.push(node);
+                            }
+                        }
+
+                        let indexInNextNodeNeighbors = nextNode.neighbors.indexOf(removedNode);
+                        if (indexInNextNodeNeighbors !== -1) {
+                            nextNode.neighbors.splice(indexInNextNodeNeighbors, 1);
+                            if (indexInNextNodeNeighbors < nextNode.neighbors.length) {
+                                nextNode.neighbors[indexInNextNodeNeighbors].neighbors.push(nextNode);
+                            }
+                        }
+
+                        // Remove the removedNode from the global nodes array
+                        let indexInGlobalNodes = nodes.indexOf(removedNode);
+                        if (indexInGlobalNodes !== -1) {
+                            nodes.splice(indexInGlobalNodes, 1);
+                        }
+
+                        break; // Only remove one node per call to diffShrink
+                    }
+                }
+            }
+
+            randomGrowth() {
+                // insert a new node at a random position between two existing nodes and update the path
+                let i = (mathRand() * this.nodes.length) | 0;
+                let j = (i + 1) % this.nodes.length;
+                let node = this.nodes[i];
+                let nextNode = this.nodes[j];
+                let newNode = new Node((node.pos.x + nextNode.pos.x) / 2, (node.pos.y + nextNode.pos.y) / 2);
+                this.nodes.splice(j, 0, newNode);
+                nodes.push(newNode);
+                // remove neighbor j from node i and add the new node
+                node.neighbors.splice(node.neighbors.indexOf(nextNode), 1, newNode);
+                // node.neighbors.push(newNode);
+                newNode.neighbors.push(node);
+                // remove neighbor i from node j and add the new node
+                nextNode.neighbors.splice(nextNode.neighbors.indexOf(node), 1, newNode);
+                // nextNode.neighbors.push(newNode);
+                newNode.neighbors.push(nextNode);
+
+
+            }
+
+
+            // randomlly grow the path
+
+
+            // calculate the 
+
+            computeCenterOfMass() {
+                let sum = new Vector(0, 0);
+                for (const node of this.nodes) {
+                    sum = sum.add(node.pos);
+                }
+                const centerOfMass = sum.div(this.nodes.length);
+                return centerOfMass;
+            }
+
+            // compute path diameter
+            diameter() {
+                let maxDist = 0;
+                for (let i = 0; i < this.nodes.length; i++) {
+                    for (let j = 0; j < this.nodes.length; j++) {
+                        let dist = this.nodes[i].pos.dist(this.nodes[j].pos);
+                        if (dist > maxDist) {
+                            maxDist = dist;
+                        }
+                    }
+                }
+                return maxDist;
+            }
+
+
+
+        }
+
+        class World {
+            constructor() {
+                this.paths = [];
+                this.polygons = this.generatePolygonGrid(rows, cols, scl);
+                this.attractionForce = 3.6;
+                this.maxForce = 1;
+            }
+
+            generatePolygonGrid(rowCount, colCount, polygonSize) {
+                const polygons = [];
+                const xOffset = (width - (colCount * polygonSize)) / 2; // Calculate horizontal offset
+                const yOffset = (height - (rowCount * polygonSize)) / 2; // Calculate vertical offset
+
+                for (let row = 0; row < rowCount; row++) {
+                    for (let col = 0; col < colCount; col++) {
+                        const x = xOffset + col * polygonSize; // Calculate x position
+                        const y = yOffset + row * polygonSize; // Calculate y position
+                        const polygon = new Polygon(x, y, polygonSize); // Create a new Polygon instance
+                        polygons.push(polygon); // Add the polygon to the polygons array
+                    }
+                }
+
+                return polygons; // Return the array of polygons
+            }
+
+        }
+
+        // class Polygon, is a polygon that make a grid in the World canvas
+        // the polygon are connected to each other and the path nodes are constrained to stay within the polygon
+
+        class Polygon {
+            constructor(x, y, size) {
+                this.size = size;
+                this.vertices = [];
+                this.spot = false;
+                this.center = new Vector(x + size / 2, y + size / 2);
+                this.vertices.push(new Vector(x, y));
+                this.vertices.push(new Vector(x + size, y));
+                this.vertices.push(new Vector(x + size, y + size));
+                this.vertices.push(new Vector(x, y + size));
+
+            }
+            draw = () => {
+                ctx.strokeStyle = "#000";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(this.vertices[0].x, this.vertices[0].y);
+                for (let i = 1; i < this.vertices.length; i++) {
+                    ctx.lineTo(this.vertices[i].x, this.vertices[i].y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+                if (this.spot) {
+                    ctx.fillStyle = "#000";
+                    ctx.beginPath();
+                    ctx.arc(this.center.x, this.center.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+
+        window.onload = function () {
+            init();
+        }
+
+        window.addEventListener("resize", () => {
+            resizeCanvas();
+        });
+
+
+        function capture(e) {
+            if (e.key === "s") {
+                var link = document.createElement('a');
+                link.download = 'spectra_yugen.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            }
+        }
+
+        function mouseMove(event) {
+            var rect = canvas.getBoundingClientRect();
+
+            mouseX = (event.clientX - rect.left - width / 2) | 0;
+            mouseY = (event.clientY - rect.top - height / 2) | 0;
+        }
+
+        function touchMove(e) {
+            var touch = e.touches[0];
+            var rect = canvas.getBoundingClientRect();
+            mouseX = (touch.clientX - rect.left - width / 2) | 0;
+            mouseY = (touch.clientY - rect.top - height / 2) | 0;
+        }
+
+        function mapRange(value, start1, stop1, start2, stop2) {
+            return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
+        }
+
+        function randomRange(min, max) {
+            let cal = (mathRand() * (max - min) + min);
+            return parseFloat(cal);
+        }
+
+        function interpolate_coord(x, y, grid, cols) {
+            let i = (mapRange(x, -width / 2, width / 2, 0, width) / grid) | 0;
+            let j = (mapRange(y, -height / 2, height / 2, 0, height) / grid) | 0;
+
+            var index = i + j * cols;
+            return index;
+        }
+
+        function easeOutQuint(t) {
+            return 1 + (--t) * t * t * t * t;
+        }
+
+        function lerp(start, stop, amt) {
+            return amt * (stop - start) + start;
+        };
+
+        function norm(n, start, stop) {
+            return mapRange(n, start, stop, 0, 1);
+        };
+
+        function millis() {
+            return Date.now() - start;
+        }
+
+        // compute entropy returns entropy of the array
+        function computeEntropy(array) {
+            let entropy = 0;
+            let counts = {};
+            for (let i = 0; i < array.length; i++) {
+                let value = array[i];
+                if (counts[value]) {
+                    counts[value]++;
+                } else {
+                    counts[value] = 1;
+                }
+            }
+            for (let key in counts) {
+                let p = counts[key] / array.length;
+                entropy -= p * Math.log2(p);
+            }
+            return entropy;
+        }
+
+        function randomizeDelay(delayTime, grooveAmount) {
+            let minDelay = delayTime - (grooveAmount / 2);
+            let maxDelay = delayTime + (grooveAmount / 2);
+            return mathRand() * (maxDelay - minDelay) + minDelay;
+        }
+
+        function randomIndexOmit(array, omit) {
+            let randomIndex;
+            do {
+                randomIndex = (mathRand() * array.length) | 0;
+            } while (randomIndex === omit);
+            return randomIndex;
+        }
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.fillStyle = "rgba(0,0,0,0)";
+            // ctx.fillStyle = "#E3D5AE";
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function spawnUIText() {
+            let wEl = document.createElement("div");
+            wEl.className = "text";
+            // return to line 1
+            wEl.innerText = `ID: ${ID} \n Contrast: ${Array.from(contrasts).map(c => c.contrast).join(", ")}`;
+
+
+            wEl.style.left = "0px";
+            wEl.style.top = "0px";
+
+            document.body.appendChild(wEl);
+
+        }
+
+        function updateText() {
+            let wEl = document.querySelector(".text");
+            // update ID
+            wEl.innerText = `ID: ${ID} \n Contrast: ${Array.from(contrasts).map(c => c.contrast).join(", ")}`;
+        }
+
+
+
+
+    </script>
+  <script>
+  (function(){
+    let startTs = 0;
+    function sha256(s){
+      const enc=new TextEncoder().encode(s);
+      return crypto.subtle.digest('SHA-256', enc).then(buf=>Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''));
+    }
+    function snapshot(id){
+      const c = document.querySelector('canvas');
+      if(!c){ parent.postMessage({ type:'yugenDone', id, error:'no canvas'}, '*'); return; }
+      const du = c.toDataURL('image/png');
+      sha256(du).then(h=>{
+        const ms = performance.now()-startTs;
+        parent.postMessage({ type:'yugenDone', id, hash:h, ms, dataURL: du.slice(0,64)+'…' }, '*');
+      });
+    }
+    window.addEventListener('message', (ev)=>{
+      const { type, seed, id } = ev.data||{};
+      if(type==='yugenStart'){
+        try{ const u=new URL(location.href); if(seed){ u.searchParams.set('seed',seed); history.replaceState(null,'',u.toString()); } }catch{}
+        startTs = performance.now();
+        setTimeout(()=> snapshot(id), 1200);
+      }
+    });
+  })();
+  </script>
+
+
+</html>

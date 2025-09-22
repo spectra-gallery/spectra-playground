@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spectra • Art Book</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      :root{ --bg:#0b0e14; --fg:#e6f1ff; --card:rgba(255,255,255,.05); --line:rgba(255,255,255,.12); --accent:#9ad1ff; }
+      html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+      a{color:var(--accent)}
+      .wrap{padding:14px}
+      .card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+      .card-header{border-bottom:1px solid var(--line);background:transparent}
+      .card-body{padding:14px}
+      iframe{width:100%;min-height:300px;border:1px solid var(--line);border-radius:10px;background:#05070a}
+      .pill{padding:2px 6px;border-radius:999px;border:1px solid #243246;background:#0c121b;font-size:12px;margin-right:6px}
+      .navlink{color:var(--fg);text-decoration:none}
+      .navlink:hover{color:var(--accent)}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="d-flex gap-2 align-items-center mb-3">
+        <h1 class="m-0 fs-4">Spectra Art Book</h1>
+        <span class="pill ms-auto">Gallery</span>
+        <a class="pill navlink" href="/">Open Playground</a>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <input id="q" class="form-control form-control-sm" placeholder="Search (title/hash/html/css/js)" style="max-width:260px" value="<%= q||'' %>">
+        <select id="sort" class="form-select form-select-sm" style="max-width:200px">
+          <option value="date_desc" <%= (sort==='date_desc')?'selected':'' %>>Newest</option>
+          <option value="date_asc" <%= (sort==='date_asc')?'selected':'' %>>Oldest</option>
+          <option value="title_asc" <%= (sort==='title_asc')?'selected':'' %>>Title A–Z</option>
+          <option value="title_desc" <%= (sort==='title_desc')?'selected':'' %>>Title Z–A</option>
+        </select>
+        <input id="tag" class="form-control form-control-sm" placeholder="Tag filter" style="max-width:180px" value="<%= tag||'' %>">
+        <div class="form-check form-switch d-flex align-items-center gap-2">
+          <input class="form-check-input" type="checkbox" role="switch" id="mine">
+          <label class="form-check-label small" for="mine">My Sketches</label>
+        </div>
+        <button id="apply" class="btn btn-sm btn-primary">Apply</button>
+        <button id="clear" class="btn btn-sm btn-outline-light">Clear</button>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header d-flex align-items-center">
+          <div class="me-2">Tag Cloud</div>
+          <small class="text-muted">Scaled by frequency</small>
+        </div>
+        <div class="card-body">
+          <div id="tag-cloud" class="d-flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3" id="gallery">
+        <% if ((sketches||[]).length === 0) { %>
+          <div class="col">
+            <div class="card p-3">
+              <div class="text-muted">No sketches yet. Create one in the <a href="/">playground</a>.</div>
+            </div>
+          </div>
+        <% } else { %>
+          <% sketches.forEach(function(s){ %>
+            <div class="col">
+              <div class="card h-100">
+                <div class="card-header d-flex align-items-center">
+                  <span class="pill me-2">Sketch</span>
+                  <code class="text-muted small"><%= (s.hash||s._id||'').toString().slice(0,12) %></code>
+                  <a class="ms-auto navlink" href="/sketch/<%= s._id %>" target="_blank" rel="noopener">JSON</a>
+                </div>
+                <div class="card-body">
+                  <iframe id="frame-<%= s._id %>" title="sketch <%= s._id %>"></iframe>
+                  <div class="mt-2">
+                    <% if (s.title) { %>
+                      <div class="fw-semibold"><%= s.title %></div>
+                    <% } %>
+                    <div class="small text-muted"><%= new Date(s.date).toISOString() %></div>
+                    <div class="mt-2">
+                      <% (s.tags||[]).forEach(function(t){ %>
+                        <span class="pill"><%= t %></span>
+                      <% }) %>
+                    </div>
+                    <% if (s.attrs) { %>
+                      <div class="mt-2 small">
+                        <% Object.keys(s.attrs||{}).slice(0,5).forEach(function(k){ %>
+                          <span class="pill"><%= k %></span>
+                        <% }) %>
+                      </div>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+    </div>
+
+    <script>
+      // Safely embed the iframe template string for client-side rendering
+      const IFRAME_TEMPLATE = <%- JSON.stringify(iframeTemplate) %>;
+      let SKETCHES = <%- JSON.stringify(sketches.map(s => ({
+        id: s._id,
+        userId: s.userId || null,
+        title: s.title || '',
+        hash: s.hash || '',
+        seed: s.seed || '',
+        tags: s.tags || [],
+        attrs: s.attrs || null,
+        date: s.date,
+        html: s.html || '',
+        css: s.css || '',
+        javascript: s.javascript || ''
+      }))) %>;
+
+      function buildDoc(tpl, html, css, js){
+        let out = tpl;
+        out = out.replace('___FIDDLER__HTML___', () => html);
+        out = out.replace('___FIDDLER__STYLES___', () => css);
+        out = out.replace('___FIDDLER__JAVASCRIPT___', () => js);
+        return out;
+      }
+
+      function el(tag, attrs={}, children=[]) {
+        const e = document.createElement(tag);
+        for (const [k,v] of Object.entries(attrs)) {
+          if (k === 'className') e.className = v; else if (k === 'text') e.textContent = v; else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.substring(2), v); else e.setAttribute(k, v);
+        }
+        for (const c of children) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+        return e;
+      }
+
+      function getToken(){ return localStorage.getItem('JWT_TOKEN') || ''; }
+      function getUserFromToken(){ try { const t = getToken(); if (!t) return null; const p = JSON.parse(atob(t.split('.')[1])); return p; } catch(e){ return null; } }
+
+      async function fetchSketches(params){
+        const qp = new URLSearchParams(params);
+        const headers = {};
+        if (params.mine) headers['Authorization'] = 'Bearer ' + getToken();
+        const r = await fetch('/api/sketches?'+qp.toString(), { headers });
+        const j = await r.json();
+        // Normalize id field
+        j.items = (j.items||[]).map(s => ({ id: s._id || s.id, ...s }));
+        return j; // { items, nextSkip, hasMore }
+      }
+
+      async function fetchTags(params){
+        const qp = new URLSearchParams(params);
+        const headers = {};
+        if (params.mine) headers['Authorization'] = 'Bearer ' + getToken();
+        const r = await fetch('/api/tags?'+qp.toString(), { headers });
+        return await r.json(); // [{tag,count}]
+      }
+
+      function seedPreamble(seed){
+        const pre = `(function(){function cyrb128(str){let h1=1779033703,h2=3144134277,h3=1013904242,h4=2773480762;for(let i=0,k;i<str.length;i++){k=str.charCodeAt(i);h1=h2^Math.imul(h1^k,597399067);h2=h3^Math.imul(h2^k,2869860233);h3=h4^Math.imul(h3^k,951274213);h4=h1^Math.imul(h4^k,2716044179);}h1=Math.imul(h3^(h1>>>18),597399067);h2=Math.imul(h4^(h2>>>22),2869860233);h3=Math.imul(h1^(h3>>>17),951274213);h4=Math.imul(h2^(h4>>>19),2716044179);return [(h1^h2^h3^h4)>>>0,(h2^h1)>>>0,(h3^h1)>>>0,(h4^h1)>>>0];}function sfc32(a,b,c,d){return function(){a>>>=0;b>>>=0;c>>>=0;d>>>=0;let t=(a+b)|0;a=b^(b>>>9);b=(c+(c<<3))|0;c=((c<<21)|(c>>>11)) + (t=(t+(d=(d+1)|0))|0) | 0;return (t>>>0)/4294967296;}};var __SEED__=%SEED%;window.SPECTRA_SEED=__SEED__;window.SPECTRA_RANDOM=sfc32(...cyrb128(__SEED__));})();`;
+        return pre.replace('%SEED%', JSON.stringify(seed||''));
+      }
+      function traitsJS(attrs){
+        const t = attrs && attrs.traits ? attrs.traits : null;
+        return t ? ('\nwindow.$generativeTraits = ' + JSON.stringify(t) + ';\n') : '';
+      }
+      function derivePaletteTags(top){
+        const map = (name)=> name.toLowerCase().replace(/\s+/g,'-');
+        const tags = [];
+        for (const t of top){
+          const slug = map(t.contrast);
+          if (['hue','light-dark','warm-cool','saturation','complementary','extension','simultaneous'].includes(slug)) tags.push(slug);
+        }
+        const sat = top.find(x=> x.contrast.toLowerCase().includes('saturation'));
+        if (sat && sat.score >= 0.5) tags.push('high-saturation');
+        const ld = top.find(x=> x.contrast.toLowerCase().includes('light dark'));
+        if (ld && ld.score >= 0.5) tags.push('high-contrast');
+        return Array.from(new Set(tags));
+      }
+      async function suggestTagsForCard(s){
+        try{
+          const elx = document.getElementById('frame-'+s.id);
+          if (!elx) return;
+          const doc = elx.contentDocument;
+          const px = extractCanvasColors(doc);
+          const hexes = (px.length>=60) ? kmeans(px,6,6) : collectColors(doc);
+          const pal = new ColorPalette(hexes);
+          const top = pal.getDominantContrasts(3);
+          const derived = derivePaletteTags(top);
+          if (!derived.length) return alert('No tags suggested');
+          const cur = (s.tags||[]).slice();
+          let changed = false;
+          for (const t of derived){ if (!cur.includes(t)) { cur.push(t); changed = true; } }
+          if (!changed) return alert('Tags already up to date');
+          // Update UI
+          const wrap = document.getElementById('tags-'+s.id);
+          if (wrap){ for (const t of derived){ if (!s.tags || !s.tags.includes(t)) wrap.appendChild(el('span',{className:'pill'},[t])); } }
+          s.tags = cur;
+          // Try to persist if owner
+          const me = getUserFromToken();
+          const owns = me && s.userId && (s.userId === me.id || (s.userId._id && s.userId._id === me.id));
+          const token = getToken();
+          if (owns && token){
+            const r = await fetch(`/sketch/${s.id}/tags`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body: JSON.stringify({ tags: cur.join(',') }) });
+            if (!r.ok){ const j = await r.json().catch(()=>({})); alert(j.error||'Failed to save tags'); }
+          }
+        }catch(e){ alert('Could not analyze this sketch'); }
+      }
+      // Palette analysis helpers
+      function rgbToHex(rgb){ const m = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/i); if(!m) return null; const a = m[4]!==undefined? parseFloat(m[4]) : 1; if (a < 0.2) return null; const r=Number(m[1]), g=Number(m[2]), b=Number(m[3]); return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+      function collectColors(doc){ const counts=new Map(); const walker = doc.createTreeWalker(doc.body || doc.documentElement, NodeFilter.SHOW_ELEMENT); let n=0; while(walker.nextNode() && n<500){ n++; const el=walker.currentNode; const cs=doc.defaultView.getComputedStyle(el); const cols=[cs.backgroundColor, cs.color, cs.borderTopColor, cs.borderRightColor, cs.borderBottomColor, cs.borderLeftColor]; for (const c of cols){ if(!c) continue; const hex=rgbToHex(c); if(!hex) continue; counts.set(hex, (counts.get(hex)||0)+1); } } const sorted=[...counts.entries()].sort((a,b)=>b[1]-a[1]).map(([hex])=>hex); const unique=[]; for (const h of sorted){ if (!unique.some(u=> colorDist(u,h)<30)) unique.push(h); if (unique.length>=6) break; } while(unique.length<6) unique.push('#'+Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0')); return unique.slice(0,6); }
+      function colorDist(h1,h2){ const a=parseInt(h1.slice(1),16), b=parseInt(h2.slice(1),16); const r1=(a>>16)&255,g1=(a>>8)&255,b1=a&255; const r2=(b>>16)&255,g2=(b>>8)&255,b2=b&255; const dr=r1-r2,dg=g1-g2,db=b1-b2; return Math.sqrt(dr*dr+dg*dg+db*db); }
+      function extractCanvasColors(doc, maxSamples=6000){ const cvs = Array.from(doc.querySelectorAll('canvas')); const samples = []; const tmp = doc.createElement('canvas'); const tctx = tmp.getContext('2d', { willReadFrequently: true }); for (const c of cvs){ const w=c.width,h=c.height; if(!w||!h) continue; const scale=Math.min(1, 160/Math.max(w,h)); const sw=Math.max(1, Math.floor(w*scale)); const sh=Math.max(1, Math.floor(h*scale)); tmp.width=sw; tmp.height=sh; try{ tctx.drawImage(c,0,0,sw,sh); const data=tctx.getImageData(0,0,sw,sh).data; for (let i=0;i<data.length;i+=16){ const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3]; if (a<20) continue; samples.push([r,g,b]); if (samples.length>=maxSamples) break; } }catch(e){} if (samples.length>=maxSamples) break; } return samples; }
+      function kmeans(pixels, k=6, iters=6){ if (!pixels.length) return []; const centers=[]; for (let i=0;i<k;i++){ const p = pixels[(Math.random()*pixels.length)|0]; centers.push(p.slice()); } const dist2=(a,b)=>{ const dr=a[0]-b[0],dg=a[1]-b[1],db=a[2]-b[2]; return dr*dr+dg*dg+db*db; }; for (let t=0;t<iters;t++){ const sums=Array.from({length:k},()=>[0,0,0,0]); for (const p of pixels){ let bi=0,bd=Infinity; for (let i=0;i<k;i++){ const d=dist2(p,centers[i]); if(d<bd){bd=d; bi=i;} } const s=sums[bi]; s[0]+=p[0]; s[1]+=p[1]; s[2]+=p[2]; s[3]++; } for (let i=0;i<k;i++){ const s=sums[i]; if(s[3]) centers[i]=[(s[0]/s[3])|0,(s[1]/s[3])|0,(s[2]/s[3])|0]; } } const hex = c=>'#'+c.map(x=>Math.max(0,Math.min(255,x)).toString(16).padStart(2,'0')).join(''); return centers.map(hex); }
+      class ColorPhil { constructor(hex){ if(!/^#?[0-9a-f]{6}$/i.test(hex)) throw new Error('Bad hex: '+hex); this.hex=hex.startsWith('#')?hex:'#'+hex; const {r,g,b}=ColorPhil.#hexToRgb(this.hex); this.rgb={r,g,b}; this.hsl=ColorPhil.#rgbToHsl(r,g,b); this.lum=ColorPhil.#relativeLuminance(r,g,b); this.warmth=ColorPhil.#warmth(this.hsl.h); this.complementHue=(this.hsl.h+180)%360; } static #hexToRgb(hex){ const int=parseInt(hex.slice(1),16); return { r:(int>>16)&255, g:(int>>8)&255, b:int&255 }; } static #rgbToHsl(r,g,b){ r/=255; g/=255; b/=255; const max=Math.max(r,g,b), min=Math.min(r,g,b); let h,s,l=(max+min)/2; if(max===min){ h=s=0; } else { const d=max-min; s=l>0.5? d/(2-max-min): d/(max+min); switch(max){ case r: h=(g-b)/d+(g<b?6:0); break; case g: h=(b-r)/d+2; break; default: h=(r-g)/d+4; } h*=60; } return {h,s,l}; } static #relativeLuminance(r,g,b){ const srgb=[r,g,b].map(v=>{ v/=255; return v<=0.03928? v/12.92 : ((v+0.055)/1.055)**2.4; }); return 0.2126*srgb[0]+0.7152*srgb[1]+0.0722*srgb[2]; } static #warmth(h){ const d=Math.min(Math.abs(h-60), 360-Math.abs(h-60)); return 180-d; } }
+      class ColorPalette { constructor(hexes){ if(!Array.isArray(hexes)||hexes.length!==6) throw new Error('Provide six hex colours'); this.colors=hexes.map(h=>new ColorPhil(h)); } getDominantContrasts(max=3){ const clamp01=v=>Math.max(0,Math.min(1,v)); const hueRange=(()=>{ const hs=this.colors.map(c=>c.hsl.h).sort((a,b)=>a-b); const gaps=hs.map((h,i)=>(i===0? h+360-hs.at(-1) : h-hs[i-1])); return 360-Math.max(...gaps); })(); const warmthSpread=(()=>{ const w=this.colors.map(c=>c.warmth); return Math.max(...w)-Math.min(...w); })(); const complementaryScore=(()=>{ let best=0; for(let i=0;i<this.colors.length-1;i++){ for(let j=i+1;j<this.colors.length;j++){ const d=Math.abs(this.colors[i].hsl.h-this.colors[j].hsl.h); const diff=Math.min(d,360-d); const closeness=1-Math.abs(diff-180)/180; best=Math.max(best,closeness); } } return best; })(); const simultaneousScore=(()=>{ const lights=this.colors.filter(c=>c.hsl.l>=0.6).length; const darks=this.colors.filter(c=>c.hsl.l<=0.4).length; const mixed=Math.min(lights,darks); return clamp01(mixed/3); })(); const metrics={ hue: clamp01(hueRange/360), 'light dark': clamp01(Math.max(...this.colors.map(c=>c.lum))-Math.min(...this.colors.map(c=>c.lum))), 'warm cool': clamp01(warmthSpread/180), 'saturation': clamp01(Math.max(...this.colors.map(c=>c.hsl.s))-Math.min(...this.colors.map(c=>c.hsl.s))), 'complementary': complementaryScore, 'extension': clamp01(Math.max(...this.colors.map(c=>c.hsl.l))-Math.min(...this.colors.map(c=>c.hsl.l))), 'simultaneous': simultaneousScore }; return Object.entries(metrics).sort(([,a],[,b])=>b-a).slice(0,3).map(([contrast,score])=>({ contrast, score:+score.toFixed(3) })); } }
+      function analyzeCardPalette(iframe, id){ try { const doc = iframe.contentDocument; const px = extractCanvasColors(doc); const hexes = (px.length>=60) ? kmeans(px,6,6) : collectColors(doc); const pal = new ColorPalette(hexes); const top = pal.getDominantContrasts(3); const p = document.getElementById('pal-'+id); const c = document.getElementById('con-'+id); if (p && c){ p.innerHTML=''; c.innerHTML=''; for (const h of hexes){ const d=document.createElement('div'); d.style.width='24px'; d.style.height='16px'; d.style.border='1px solid #243246'; d.style.borderRadius='6px'; d.style.background=h; d.title=h; p.appendChild(d); } for (const it of top){ const b=document.createElement('span'); b.className='pill'; b.textContent = it.contrast + ' ' + it.score; c.appendChild(b); } } } catch(e){} }
+
+      function renderGallery(list){
+        const g = document.getElementById('gallery');
+        g.innerHTML = '';
+        if (!list.length){
+          g.appendChild(el('div', { className:'col' }, [ el('div', { className:'card p-3' }, [ el('div', { className:'text-muted', text:'No sketches found.'}) ]) ]));
+          return;
+        }
+        const me = getUserFromToken();
+        for (const s of list){
+          const owns = me && s.userId && (s.userId === me.id || (s.userId._id && s.userId._id === me.id));
+          const frameId = 'frame-'+s.id;
+          const titleSpan = el('span', { className:'fw-semibold' }, [ s.title || 'Untitled' ]);
+          const editTitleBtn = owns ? el('button', { className:'btn btn-sm btn-outline-info ms-2', text:'Edit', onclick: async ()=>{
+            const nv = prompt('New title', s.title||'');
+            if (nv===null) return;
+            const r = await fetch(`/sketch/${s.id}/title`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body: JSON.stringify({ title: nv }) });
+            if (r.ok){ s.title = nv; titleSpan.textContent = nv || 'Untitled'; } else { alert('Failed to update title'); }
+          }}) : null;
+
+          const tagsWrap = el('div', { className:'mt-2', id:`tags-${s.id}` });
+          for (const t of (s.tags||[])) tagsWrap.appendChild(el('span', { className:'pill' }, [ t ]));
+          const editTagsBtn = owns ? el('button', { className:'btn btn-sm btn-outline-light ms-2', text:'Edit Tags', onclick: async ()=>{
+            const nv = prompt('Comma-separated tags', (s.tags||[]).join(', '));
+            if (nv===null) return;
+            const r = await fetch(`/sketch/${s.id}/tags`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body: JSON.stringify({ tags: nv }) });
+            const j = await r.json();
+            if (r.ok){ s.tags = j.tags; tagsWrap.innerHTML=''; for (const t of s.tags) tagsWrap.appendChild(el('span', { className:'pill' }, [ t ])); } else { alert(j.error||'Failed to update tags'); }
+          }}) : null;
+
+          const actions = el('div', { className:'mt-2 d-flex gap-2' }, [
+            el('a', { className:'btn btn-sm btn-outline-info', href:`/sketch/${s.id}/download?format=yugen` }, [ 'Download' ]),
+            el('a', { className:'btn btn-sm btn-outline-secondary', href:`/licensor/${s.id}` }, [ 'License' ]),
+            el('button', { className:'btn btn-sm btn-outline-info', text:'Suggest tags', onclick: async ()=>{ await suggestTagsForCard(s); } }),
+            el('button', { className:'btn btn-sm btn-outline-light', text:'Open', onclick: ()=>{
+              const w = window.open('', '_blank');
+              const doc = buildDoc(IFRAME_TEMPLATE, s.html, s.css, s.javascript);
+              w.document.open(); w.document.write(doc); w.document.close();
+            } })
+          ]);
+
+          const header = el('div', { className:'card-header d-flex align-items-center' }, [
+            el('span', { className:'pill me-2' }, [ 'Sketch' ]),
+            el('code', { className:'text-muted small' }, [ (s.hash||s.id).toString().slice(0,12) ]),
+            el('a', { className:'ms-auto navlink', href:`/sketch/${s.id}`, target:'_blank', rel:'noopener' }, [ 'JSON' ])
+          ]);
+          const paletteWrap = el('div', { className:'mt-2 d-flex gap-2 flex-wrap', id:`pal-${s.id}` });
+          const contrastWrap = el('div', { className:'mt-1 d-flex gap-2 flex-wrap', id:`con-${s.id}` });
+          const body = el('div', { className:'card-body' }, [
+            el('iframe', { id:frameId, title:`sketch ${s.id}` }),
+            el('div', { className:'mt-2' }, [ titleSpan, editTitleBtn ].filter(Boolean)),
+            el('div', { className:'small text-muted' }, [ new Date(s.date).toISOString() ]),
+            tagsWrap,
+            editTagsBtn,
+            paletteWrap,
+            contrastWrap,
+            actions
+          ]);
+          const card = el('div', { className:'card h-100' }, [ header, body ]);
+          g.appendChild(el('div', { className:'col' }, [ card ]));
+        }
+        // Fill iframes
+        for (const s of list){
+          const elx = document.getElementById('frame-'+s.id);
+          if (!elx) continue;
+          const js = seedPreamble(s.seed) + traitsJS(s.attrs) + (s.javascript||'');
+          const doc = buildDoc(IFRAME_TEMPLATE, s.html, s.css, js);
+          elx.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(doc);
+          elx.onload = ()=>{ try { analyzeCardPalette(elx, s.id); } catch(e){} };
+        }
+      }
+
+      function appendToGallery(items){
+        const g = document.getElementById('gallery');
+        const me = getUserFromToken();
+        for (const s of items){
+          const owns = me && s.userId && (s.userId === me.id || (s.userId._id && s.userId._id === me.id));
+          const frameId = 'frame-'+s.id;
+          const titleSpan = el('span', { className:'fw-semibold' }, [ s.title || 'Untitled' ]);
+          const editTitleBtn = owns ? el('button', { className:'btn btn-sm btn-outline-info ms-2', text:'Edit', onclick: async ()=>{
+            const nv = prompt('New title', s.title||'');
+            if (nv===null) return;
+            const r = await fetch(`/sketch/${s.id}/title`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body: JSON.stringify({ title: nv }) });
+            if (r.ok){ s.title = nv; titleSpan.textContent = nv || 'Untitled'; } else { alert('Failed to update title'); }
+          }}) : null;
+          const tagsWrap = el('div', { className:'mt-2', id:`tags-${s.id}` });
+          for (const t of (s.tags||[])) tagsWrap.appendChild(el('span', { className:'pill' }, [ t ]));
+          const editTagsBtn = owns ? el('button', { className:'btn btn-sm btn-outline-light ms-2', text:'Edit Tags', onclick: async ()=>{
+            const nv = prompt('Comma-separated tags', (s.tags||[]).join(', '));
+            if (nv===null) return;
+            const r = await fetch(`/sketch/${s.id}/tags`, { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body: JSON.stringify({ tags: nv }) });
+            const j = await r.json();
+            if (r.ok){ s.tags = j.tags; tagsWrap.innerHTML=''; for (const t of s.tags) tagsWrap.appendChild(el('span', { className:'pill' }, [ t ])); } else { alert(j.error||'Failed to update tags'); }
+          }}) : null;
+          const actions = el('div', { className:'mt-2 d-flex gap-2' }, [
+            el('a', { className:'btn btn-sm btn-outline-info', href:`/sketch/${s.id}/download?format=yugen` }, [ 'Download' ]),
+            el('a', { className:'btn btn-sm btn-outline-secondary', href:`/licensor/${s.id}` }, [ 'License' ]),
+            el('button', { className:'btn btn-sm btn-outline-info', text:'Suggest tags', onclick: async ()=>{ await suggestTagsForCard(s); } }),
+            el('button', { className:'btn btn-sm btn-outline-light', text:'Open', onclick: ()=>{
+              const w = window.open('', '_blank');
+              const doc = buildDoc(IFRAME_TEMPLATE, s.html, s.css, s.javascript);
+              w.document.open(); w.document.write(doc); w.document.close();
+            } })
+          ]);
+          const header = el('div', { className:'card-header d-flex align-items-center' }, [
+            el('span', { className:'pill me-2' }, [ 'Sketch' ]),
+            el('code', { className:'text-muted small' }, [ (s.hash||s.id).toString().slice(0,12) ]),
+            el('a', { className:'ms-auto navlink', href:`/sketch/${s.id}`, target:'_blank', rel:'noopener' }, [ 'JSON' ])
+          ]);
+          const body = el('div', { className:'card-body' }, [
+            el('iframe', { id:frameId, title:`sketch ${s.id}` }),
+            el('div', { className:'mt-2' }, [ titleSpan, editTitleBtn ].filter(Boolean)),
+            el('div', { className:'small text-muted' }, [ new Date(s.date).toISOString() ]),
+            tagsWrap,
+            editTagsBtn,
+            actions
+          ]);
+          const card = el('div', { className:'card h-100' }, [ header, body ]);
+          g.appendChild(el('div', { className:'col' }, [ card ]));
+          // Set iframe
+          const elx = document.getElementById(frameId);
+          if (elx){ const js = seedPreamble(s.seed) + traitsJS(s.attrs) + (s.javascript||''); const doc = buildDoc(IFRAME_TEMPLATE, s.html, s.css, js); elx.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(doc); elx.onload = ()=>{ try { analyzeCardPalette(elx, s.id); } catch(e){} }; }
+        }
+      }
+
+      function colorForTag(tag){
+        let h = 0; for (let i=0;i<tag.length;i++) h = (h*31 + tag.charCodeAt(i))>>>0; h = h % 360; return `hsl(${h} 70% 70%)`;
+      }
+      function renderTagCloud(counts){
+        const wrap = document.getElementById('tag-cloud');
+        wrap.innerHTML = '';
+        if (!counts.length) { wrap.textContent = 'No tags'; return; }
+        const max = Math.max(...counts.map(x=>x.count));
+        const min = Math.min(...counts.map(x=>x.count));
+        for (const {tag,count} of counts){
+          const norm = (count - min) / Math.max(1, (max - min));
+          const size = 12 + Math.round(norm*20);
+          const a = 0.5 + norm*0.5;
+          const t = el('span', { className:'pill', style:`font-size:${size}px; background:rgba(12,18,27,${a}); border-color:${colorForTag(tag)}` }, [ tag ]);
+          t.addEventListener('click', ()=>{ document.getElementById('tag').value = tag; applyFilters(true); });
+          wrap.appendChild(t);
+        }
+      }
+
+      let PAGING = { params:null, loading:false, hasMore:false, nextSkip:0 };
+      async function applyFilters(push){
+        PAGING.params = { q: document.getElementById('q').value.trim(), tag: document.getElementById('tag').value.trim(), sort: document.getElementById('sort').value };
+        if (document.getElementById('mine').checked) PAGING.params.mine = '1';
+        PAGING.params.skip = 0; PAGING.params.limit = 30; PAGING.loading = true;
+        const r = await fetchSketches(PAGING.params);
+        SKETCHES = (r.items||[]);
+        PAGING.nextSkip = r.nextSkip||SKETCHES.length; PAGING.hasMore = !!r.hasMore; PAGING.loading = false;
+        renderGallery(SKETCHES);
+        const tags = await fetchTags(PAGING.params.mine ? { mine:'1' } : {});
+        renderTagCloud(tags);
+        if (push){
+          const qs = new URLSearchParams({ q: PAGING.params.q||'', tag: PAGING.params.tag||'', sort: PAGING.params.sort||'' }).toString();
+          history.replaceState(null, '', '/artbook' + (qs?'?'+qs:''));
+        }
+      }
+
+      async function maybeLoadMore(){
+        if (!PAGING.hasMore || PAGING.loading) return;
+        const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 200);
+        if (!nearBottom) return;
+        PAGING.loading = true;
+        const params = { ...PAGING.params, skip: PAGING.nextSkip, limit: 30 };
+        const r = await fetchSketches(params);
+        const items = (r.items||[]);
+        SKETCHES = SKETCHES.concat(items);
+        appendToGallery(items);
+        PAGING.nextSkip = r.nextSkip || (PAGING.nextSkip + items.length);
+        PAGING.hasMore = !!r.hasMore;
+        PAGING.loading = false;
+      }
+
+      window.addEventListener('DOMContentLoaded', ()=>{
+        // Initialize My toggle from URL fragment "#mine" if present
+        document.getElementById('mine').checked = (location.hash === '#mine');
+        applyFilters(false);
+        window.addEventListener('scroll', maybeLoadMore);
+      });
+
+      // Filters: navigate with query params
+      function applyFilters(){
+        const params = new URLSearchParams();
+        const q = document.getElementById('q').value.trim();
+        const tag = document.getElementById('tag').value.trim();
+        const sort = document.getElementById('sort').value;
+        if (q) params.set('q', q);
+        if (tag) params.set('tag', tag);
+        if (sort) params.set('sort', sort);
+        const url = '/artbook' + (params.toString() ? ('?' + params.toString()) : '');
+        window.location.assign(url);
+      }
+      document.getElementById('apply').addEventListener('click', ()=>applyFilters(true));
+      document.getElementById('clear').addEventListener('click', ()=> { document.getElementById('q').value=''; document.getElementById('tag').value=''; document.getElementById('sort').value='date_desc'; document.getElementById('mine').checked=false; applyFilters(true); });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+  </html>

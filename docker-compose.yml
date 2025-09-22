@@ -1,0 +1,27 @@
+version: '3.9'
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "6002:6002"
+    environment:
+      - PORT=6002
+      - DB_HOST=mongo
+      - DB_PORT=27017
+      - DB_NAME=spectra_db
+      - JWT_SECRET=${JWT_SECRET}
+      - API_URL=${API_URL}
+      - PROXY_WHITELIST=${PROXY_WHITELIST}
+      - PROXY_CORS_ORIGINS=${PROXY_CORS_ORIGINS}
+    depends_on:
+      - mongo
+volumes:
+  mongo_data:
