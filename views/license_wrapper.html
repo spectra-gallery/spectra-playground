@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <!--
+    |** Spectra Licensed Sketch **|
+    @name <%= title %>
+    @id <%= id %>
+    @hash <%= hash %>
+    @seed <%= seed %>
+    @namespace <%= namespace %>
+    @authority <%= authority %>
+    @properties <%= properties %>
+    @tags <%= tags %>
+    @license <%= license %>
+    @date <%= date %>
+  -->
+  <style>
+  <%= css %>
+  </style>
+</head>
+<body>
+
+<%= html %>
+
+<script>
+// Seed management (inspired by yugen_license.html)
+(function(){
+  const upsilon = ["υ","yū","Yu","Ul"];
+  function autoSeed(href){
+    let seed = href.split('/').find(t=> upsilon.some(ups=> t.includes(ups)) );
+    if (seed != null) {
+      const pattern = "seed=";
+      for (let i=0;i<seed.length-pattern.length;++i){ if (seed.substring(i,i+pattern.length)===pattern){ seed = seed.substring(i+pattern.length); break; } }
+      return seed;
+    }
+    const qp = new URLSearchParams(location.search).get('seed');
+    if (qp) return qp;
+    const alphabet = '0123456789abcdefghijklmnopqrstuvwsyz';
+    return 'υ'+Array.from({length:64}, ()=> alphabet[(Math.random()*alphabet.length)|0]).join('');
+  }
+  function cyrb128(str){ let h1=1779033703,h2=3144134277,h3=1013904242,h4=2773480762; for(let i=0,k;i<str.length;i++){k=str.charCodeAt(i); h1=h2^Math.imul(h1^k,597399067); h2=h3^Math.imul(h2^k,2869860233); h3=h4^Math.imul(h3^k,951274213); h4=h1^Math.imul(h4^k,2716044179);} h1=Math.imul(h3^(h1>>>18),597399067); h2=Math.imul(h4^(h2>>>22),2869860233); h3=Math.imul(h1^(h3>>>17),951274213); h4=Math.imul(h2^(h4>>>19),2716044179); return [(h1^h2^h3^h4)>>>0,(h2^h1)>>>0,(h3^h1)>>>0,(h4^h1)>>>0]; }
+  function sfc32(a,b,c,d){ return function(){ a>>>=0;b>>>=0;c>>>=0;d>>>=0; let t=(a+b)|0; a=b^(b>>>9); b=(c+(c<<3))|0; c=((c<<21)|(c>>>11)) + (t=(t+(d=(d+1)|0))|0) | 0; return (t>>>0)/4294967296; } }
+  const seed = <%- JSON.stringify(seed || '') %> || autoSeed(location.href);
+  const rand = sfc32(...cyrb128(seed));
+  window.SPECTRA_SEED = seed;
+  window.SPECTRA_RANDOM = rand;
+})();
+</script>
+<script>
+<%= javascript %>
+</script>
+
+</body>
+</html>
+
