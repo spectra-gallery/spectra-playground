@@ -1,0 +1,11 @@
+{
+  "name": "Baseline Rules",
+  "version": 1,
+  "regex": [
+    { "id": "no-eval", "pattern": "\\beval\\s*\\(", "message": "Avoid eval() for security." },
+    { "id": "document-write", "pattern": "document\\.write\\s*\\(", "message": "document.write can degrade performance." },
+    { "id": "long-function", "pattern": "function\\s+\\w+\\s*\\([^)]*\\)\\s*{[\\s\\S]{400,}}", "message": "Function too long; consider refactor." },
+    { "id": "unused-var", "pattern": "\\bvar\\s+_\\w+\\s*;", "message": "Suspicious unused variable." }
+  ]
+}
+
